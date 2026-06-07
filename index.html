@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Sauerteig">
+  <title>Sauerteig Rechner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #1a1612;
+      --surface: #231f1a;
+      --surface2: #2e2820;
+      --border: #3d3428;
+      --accent: #c8955a;
+      --accent2: #e8b87a;
+      --text: #f0e8d8;
+      --text-muted: #8a7a68;
+      --text-dim: #5a4e42;
+      --success: #7aaa6a;
+      --grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'DM Mono', monospace;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100svh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: var(--grain);
+      pointer-events: none;
+      opacity: 0.6;
+      z-index: 100;
+    }
+
+    /* Ambient glow */
+    body::after {
+      content: '';
+      position: fixed;
+      top: -20%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60%;
+      height: 40%;
+      background: radial-gradient(ellipse, rgba(200,149,90,0.08) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app {
+      max-width: 430px;
+      margin: 0 auto;
+      min-height: 100svh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* HEADER */
+    header {
+      padding: 56px 28px 28px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-label {
+      font-size: 10px;
+      letter-spacing: 0.25em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    header h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 38px;
+      font-weight: 300;
+      line-height: 1.1;
+      color: var(--text);
+    }
+
+    header h1 em {
+      font-style: italic;
+      color: var(--accent2);
+    }
+
+    /* INPUT SECTION */
+    .input-section {
+      padding: 32px 28px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .input-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .input-field {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 18px;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 32px;
+      font-weight: 300;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+      width: 100%;
+    }
+
+    .input-field:focus {
+      border-color: var(--accent);
+    }
+
+    .input-field::placeholder {
+      color: var(--text-dim);
+    }
+
+    .unit-badge {
+      font-size: 13px;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      min-width: 20px;
+    }
+
+    /* SETTINGS ROW */
+    .settings-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .setting-card {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+
+    .setting-card label {
+      display: block;
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .setting-card select {
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      outline: none;
+      width: 100%;
+      cursor: pointer;
+      -webkit-appearance: none;
+    }
+
+    .setting-card select option {
+      background: var(--surface2);
+      color: var(--text);
+    }
+
+    /* CALCULATE BUTTON */
+    .calc-btn {
+      display: block;
+      width: calc(100% - 56px);
+      margin: 20px 28px 0;
+      padding: 18px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+      color: #1a1612;
+      border: none;
+      border-radius: 8px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      font-weight: 400;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+
+    .calc-btn:active { opacity: 0.85; transform: scale(0.98); }
+
+    /* RESULTS */
+    .results {
+      flex: 1;
+      padding: 0 28px 40px;
+      display: none;
+    }
+
+    .results.visible { display: block; }
+
+    .result-block {
+      margin-top: 28px;
+      opacity: 0;
+      transform: translateY(12px);
+      animation: fadeUp 0.4s forwards;
+    }
+
+    .result-block:nth-child(1) { animation-delay: 0.05s; }
+    .result-block:nth-child(2) { animation-delay: 0.10s; }
+    .result-block:nth-child(3) { animation-delay: 0.15s; }
+    .result-block:nth-child(4) { animation-delay: 0.20s; }
+    .result-block:nth-child(5) { animation-delay: 0.25s; }
+
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .block-title {
+      font-size: 9px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .block-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .result-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .result-line:last-child { border-bottom: none; }
+
+    .result-name {
+      font-size: 12px;
+      color: var(--text-muted);
+      flex: 1;
+    }
+
+    .result-value {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 22px;
+      font-weight: 300;
+      color: var(--text);
+      margin-left: 12px;
+    }
+
+    .result-unit {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-left: 4px;
+    }
+
+    .result-value.accent {
+      color: var(--accent2);
+    }
+
+    /* TIMELINE */
+    .timeline {
+      margin-top: 28px;
+    }
+
+    .timeline-item {
+      display: flex;
+      gap: 16px;
+      padding: 0 0 20px;
+      position: relative;
+      opacity: 0;
+      transform: translateY(8px);
+      animation: fadeUp 0.4s forwards;
+    }
+
+    .timeline-item:nth-child(1) { animation-delay: 0.3s; }
+    .timeline-item:nth-child(2) { animation-delay: 0.35s; }
+    .timeline-item:nth-child(3) { animation-delay: 0.40s; }
+    .timeline-item:nth-child(4) { animation-delay: 0.45s; }
+
+    .timeline-left {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 36px;
+      flex-shrink: 0;
+    }
+
+    .timeline-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      margin-top: 4px;
+      flex-shrink: 0;
+    }
+
+    .timeline-line {
+      width: 1px;
+      flex: 1;
+      background: var(--border);
+      margin-top: 4px;
+    }
+
+    .timeline-item:last-child .timeline-line { display: none; }
+
+    .timeline-content { flex: 1; }
+
+    .timeline-time {
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .timeline-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px;
+      font-weight: 400;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .timeline-items {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .timeline-ingredient {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .timeline-ingredient span:last-child {
+      color: var(--text);
+    }
+
+    /* EMPTY STATE */
+    .empty-state {
+      padding: 48px 28px;
+      text-align: center;
+      opacity: 0.5;
+    }
+
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .empty-state p {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px;
+      font-style: italic;
+      color: var(--text-muted);
+    }
+
+    /* INSTALL HINT */
+    .install-hint {
+      padding: 16px 28px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      background: var(--surface);
+    }
+
+    .install-hint span { font-size: 10px; color: var(--text-dim); line-height: 1.5; }
+    .install-hint strong { color: var(--text-muted); }
+
+    .install-close {
+      margin-left: auto;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="header-label">Bäckerei · Werkzeug</div>
+    <h1>Sauerteig<br><em>Rechner</em></h1>
+  </header>
+
+  <div class="input-section">
+    <div class="input-group">
+      <label>Gewünschte Teigmenge</label>
+      <div class="input-row">
+        <input class="input-field" type="number" id="teigmenge" placeholder="700" min="100" max="5000" inputmode="numeric">
+        <span class="unit-badge">g</span>
+      </div>
+    </div>
+
+    <div class="settings-row">
+      <div class="setting-card">
+        <label>Hydration</label>
+        <select id="hydration">
+          <option value="0.65">65%</option>
+          <option value="0.68">68%</option>
+          <option value="0.71" selected>71%</option>
+          <option value="0.74">74%</option>
+          <option value="0.78">78%</option>
+          <option value="0.80">80%</option>
+        </select>
+      </div>
+      <div class="setting-card">
+        <label>Sauerteig-Anteil</label>
+        <select id="sauerteig-anteil">
+          <option value="0.15">Sommer 15%</option>
+          <option value="0.20" selected>Winter 20%</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <button class="calc-btn" onclick="berechnen()">Berechnen</button>
+
+  <div class="results" id="results">
+    <!-- filled by JS -->
+  </div>
+
+  <div class="empty-state" id="emptyState">
+    <span class="empty-icon">🌾</span>
+    <p>Teigmenge eingeben<br>und berechnen</p>
+  </div>
+
+  <div class="install-hint" id="installHint">
+    <span>📱</span>
+    <span>Auf Homescreen: <strong>Teilen → Zum Homescreen</strong></span>
+    <button class="install-close" onclick="document.getElementById('installHint').remove()">×</button>
+  </div>
+
+</div>
+
+<script>
+  function berechnen() {
+    const teigmengeInput = parseFloat(document.getElementById('teigmenge').value);
+    if (!teigmengeInput || teigmengeInput < 100) {
+      document.getElementById('teigmenge').focus();
+      return;
+    }
+
+    const hydration = parseFloat(document.getElementById('hydration').value);
+    const sauerteigAnteil = parseFloat(document.getElementById('sauerteig-anteil').value);
+
+    // Exakte Berechnung (ersetzt VBA-Iteration)
+    // Teig = Mehl + Wasser + Salz + Sauerteig
+    // Wasser = Mehl * hydration
+    // Salz = Mehl * 0.025
+    // Sauerteig = Mehl * sauerteigAnteil
+    // -> Teig = Mehl * (1 + hydration + 0.025 + sauerteigAnteil)
+    const divisor = 1 + hydration + 0.025 + sauerteigAnteil;
+    const mehl = teigmengeInput / divisor;
+    const wasser = mehl * hydration;
+    const salz = mehl * 0.025;
+    const sauerteig = mehl * sauerteigAnteil;
+    const bassinagewasser = wasser * 0.05;
+    const teigwasser = wasser * 0.95;
+    const totalTeig = mehl + wasser + salz + sauerteig;
+
+    // Anstellgut-Berechnung (Verhältnis 2:5:4)
+    // Auffrischen 1 & 2 (inkl. 25% Reserve)
+    const agAnteil1 = sauerteig * (2/20) / 1.25 * 1.25;
+    const agMehl1 = agAnteil1 * (5/2);
+    const agWasser1 = agAnteil1 * (4/2);
+    const agTotal1 = (agAnteil1 + agMehl1 + agWasser1) * 1.25;
+
+    // Sauerteig ansetzen (Verhältnis 2:10:8, inkl. 20% Reserve)
+    const stAnteil = sauerteig * (2/20);
+    const stMehl = sauerteig * (10/20);
+    const stWasser = sauerteig * (8/20);
+    const stTotal = (stAnteil + stMehl + stWasser) * 1.20;
+
+    const fmt = v => v.toFixed(1);
+
+    const resultsDiv = document.getElementById('results');
+    const emptyState = document.getElementById('emptyState');
+
+    emptyState.style.display = 'none';
+    resultsDiv.innerHTML = `
+      <div class="result-block">
+        <div class="block-title">Übersicht</div>
+        <div class="result-line">
+          <span class="result-name">Teigmenge (berechnet)</span>
+          <span class="result-value accent">${fmt(totalTeig)}</span><span class="result-unit">g</span>
+        </div>
+        <div class="result-line">
+          <span class="result-name">Totale Mehlmenge</span>
+          <span class="result-value">${fmt(mehl)}</span><span class="result-unit">g</span>
+        </div>
+      </div>
+
+      <div class="result-block">
+        <div class="block-title">Zutaten Teig</div>
+        <div class="result-line">
+          <span class="result-name">Mehl</span>
+          <span class="result-value">${fmt(mehl)}</span><span class="result-unit">g</span>
+        </div>
+        <div class="result-line">
+          <span class="result-name">Wasser gesamt<br><small style="color:var(--text-dim);font-size:10px;">(Hydration ${(hydration*100).toFixed(0)}%)</small></span>
+          <span class="result-value">${fmt(wasser)}</span><span class="result-unit">g</span>
+        </div>
+        <div class="result-line">
+          <span class="result-name">→ Bassinage (5%)</span>
+          <span class="result-value" style="font-size:17px">${fmt(bassinagewasser)}</span><span class="result-unit">g</span>
+        </div>
+        <div class="result-line">
+          <span class="result-name">→ Teigwasser (95%)</span>
+          <span class="result-value" style="font-size:17px">${fmt(teigwasser)}</span><span class="result-unit">g</span>
+        </div>
+        <div class="result-line">
+          <span class="result-name">Salz (2.5%)</span>
+          <span class="result-value">${fmt(salz)}</span><span class="result-unit">g</span>
+        </div>
+        <div class="result-line">
+          <span class="result-name">Sauerteig (${(sauerteigAnteil*100).toFixed(0)}%)</span>
+          <span class="result-value">${fmt(sauerteig)}</span><span class="result-unit">g</span>
+        </div>
+      </div>
+
+      <div class="result-block timeline">
+        <div class="block-title">Zeitplan</div>
+
+        <div class="timeline-item">
+          <div class="timeline-left">
+            <div class="timeline-dot"></div>
+            <div class="timeline-line"></div>
+          </div>
+          <div class="timeline-content">
+            <div class="timeline-time">Dienstag · 20:00</div>
+            <div class="timeline-title">1. Auffrischen Anstellgut</div>
+            <div class="timeline-items">
+              <div class="timeline-ingredient"><span>Starter</span><span>${fmt(agAnteil1/1.25)} g</span></div>
+              <div class="timeline-ingredient"><span>Mehl</span><span>${fmt(agMehl1/1.25)} g</span></div>
+              <div class="timeline-ingredient"><span>Wasser</span><span>${fmt(agWasser1/1.25)} g</span></div>
+              <div class="timeline-ingredient" style="border-top:1px solid var(--border);padding-top:4px;margin-top:4px"><span>Total (inkl. 25% Reserve)</span><span>${fmt(agTotal1)} g</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-left">
+            <div class="timeline-dot"></div>
+            <div class="timeline-line"></div>
+          </div>
+          <div class="timeline-content">
+            <div class="timeline-time">Donnerstag · 06:00</div>
+            <div class="timeline-title">2. Auffrischen Anstellgut</div>
+            <div class="timeline-items">
+              <div class="timeline-ingredient"><span>Starter</span><span>${fmt(agAnteil1/1.25)} g</span></div>
+              <div class="timeline-ingredient"><span>Mehl</span><span>${fmt(agMehl1/1.25)} g</span></div>
+              <div class="timeline-ingredient"><span>Wasser</span><span>${fmt(agWasser1/1.25)} g</span></div>
+              <div class="timeline-ingredient" style="border-top:1px solid var(--border);padding-top:4px;margin-top:4px"><span>Total (inkl. 25% Reserve)</span><span>${fmt(agTotal1)} g</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-left">
+            <div class="timeline-dot"></div>
+            <div class="timeline-line"></div>
+          </div>
+          <div class="timeline-content">
+            <div class="timeline-time">Donnerstag · 20:00</div>
+            <div class="timeline-title">Sauerteig ansetzen</div>
+            <div class="timeline-items">
+              <div class="timeline-ingredient"><span>Starter</span><span>${fmt(stAnteil)} g</span></div>
+              <div class="timeline-ingredient"><span>Mehl</span><span>${fmt(stMehl)} g</span></div>
+              <div class="timeline-ingredient"><span>Wasser</span><span>${fmt(stWasser)} g</span></div>
+              <div class="timeline-ingredient" style="border-top:1px solid var(--border);padding-top:4px;margin-top:4px"><span>Total (inkl. 20% Reserve)</span><span>${fmt(stTotal)} g</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-left">
+            <div class="timeline-dot" style="background:var(--success)"></div>
+          </div>
+          <div class="timeline-content">
+            <div class="timeline-time">Freitag · 08:00</div>
+            <div class="timeline-title">Autolyseteig ansetzen</div>
+            <div class="timeline-items">
+              <div class="timeline-ingredient"><span>Wasser (95%)</span><span>${fmt(teigwasser)} g</span></div>
+              <div class="timeline-ingredient"><span>Mehl</span><span>${fmt(mehl)} g</span></div>
+              <div class="timeline-ingredient"><span>Sauerteig</span><span>${fmt(sauerteig)} g</span></div>
+              <div class="timeline-ingredient" style="border-top:1px solid var(--border);padding-top:4px;margin-top:4px"><span>Total</span><span>${fmt(mehl+teigwasser+sauerteig)} g</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    `;
+
+    resultsDiv.classList.add('visible');
+    resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // Enter-Taste
+  document.getElementById('teigmenge').addEventListener('keydown', e => {
+    if (e.key === 'Enter') berechnen();
+  });
+
+  // iOS PWA: hide install hint if already standalone
+  if (window.navigator.standalone) {
+    document.getElementById('installHint').remove();
+  }
+</script>
+</body>
+</html>
