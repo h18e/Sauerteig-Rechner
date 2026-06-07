@@ -434,14 +434,11 @@
     <div class="settings-row">
       <div class="setting-card">
         <label>Hydration</label>
-        <select id="hydration">
-          <option value="0.65">65%</option>
-          <option value="0.68">68%</option>
-          <option value="0.71" selected>71%</option>
-          <option value="0.74">74%</option>
-          <option value="0.78">78%</option>
-          <option value="0.80">80%</option>
-        </select>
+        <div style="display:flex;align-items:center;gap:4px">
+          <input type="number" id="hydration" value="71" min="50" max="100" inputmode="numeric"
+            style="background:transparent;border:none;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;width:36px;-webkit-appearance:none;">
+          <span style="font-size:12px;color:var(--text-muted)">%</span>
+        </div>
       </div>
       <div class="setting-card">
         <label>Sauerteig-Anteil</label>
@@ -480,7 +477,7 @@
       return;
     }
 
-    const hydration = parseFloat(document.getElementById('hydration').value);
+    const hydration = parseFloat(document.getElementById('hydration').value) / 100;
     const sauerteigAnteil = parseFloat(document.getElementById('sauerteig-anteil').value);
 
     // Exakte Berechnung (ersetzt VBA-Iteration)
@@ -511,7 +508,7 @@
     const stWasser = sauerteig * (8/20);
     const stTotal = (stAnteil + stMehl + stWasser) * 1.20;
 
-    const fmt = v => v.toFixed(1);
+    const fmt = v => Math.round(v);
 
     const resultsDiv = document.getElementById('results');
     const emptyState = document.getElementById('emptyState');
@@ -567,7 +564,7 @@
             <div class="timeline-line"></div>
           </div>
           <div class="timeline-content">
-            <div class="timeline-time">Dienstag · 20:00</div>
+            <div class="timeline-time">Backtag −3 Tage · 20:00</div>
             <div class="timeline-title">1. Auffrischen Anstellgut</div>
             <div class="timeline-items">
               <div class="timeline-ingredient"><span>Starter</span><span>${fmt(agAnteil1/1.25)} g</span></div>
@@ -584,7 +581,7 @@
             <div class="timeline-line"></div>
           </div>
           <div class="timeline-content">
-            <div class="timeline-time">Donnerstag · 06:00</div>
+            <div class="timeline-time">Backtag −1 Tag · 06:00</div>
             <div class="timeline-title">2. Auffrischen Anstellgut</div>
             <div class="timeline-items">
               <div class="timeline-ingredient"><span>Starter</span><span>${fmt(agAnteil1/1.25)} g</span></div>
@@ -601,7 +598,7 @@
             <div class="timeline-line"></div>
           </div>
           <div class="timeline-content">
-            <div class="timeline-time">Donnerstag · 20:00</div>
+            <div class="timeline-time">Backtag −1 Tag · 20:00</div>
             <div class="timeline-title">Sauerteig ansetzen</div>
             <div class="timeline-items">
               <div class="timeline-ingredient"><span>Starter</span><span>${fmt(stAnteil)} g</span></div>
@@ -617,7 +614,7 @@
             <div class="timeline-dot" style="background:var(--success)"></div>
           </div>
           <div class="timeline-content">
-            <div class="timeline-time">Freitag · 08:00</div>
+            <div class="timeline-time">Backtag · 08:00</div>
             <div class="timeline-title">Autolyseteig ansetzen</div>
             <div class="timeline-items">
               <div class="timeline-ingredient"><span>Wasser (95%)</span><span>${fmt(teigwasser)} g</span></div>
